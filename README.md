@@ -10,6 +10,11 @@ The Solana Action Endpoint Creator Bot enables users to:
 2. Generate endpoints that can be directly used to create Blinks on https://dial.to.
 3. Simplify the process of setting up Solana Actions for USDC transfers.
 
+
+## Demo
+
+Demo: https://youtu.be/frRIPRKXUGo
+
 ## Preview (Still in Progress)
 
 https://t.me/solana_action_bot (Work In Progress)
