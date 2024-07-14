@@ -1,0 +1,21 @@
+{
+  "name": "solana-action-generator-telegram-bot",
+  "author": "Terry Djony <solana@terrydjony.com>",
+  "scripts": {
+    "dev": "wrangler dev src/index.ts",
+    "deploy": "wrangler deploy --minify src/index.ts",
+    "postinstall": "patch-package"
+  },
+  "dependencies": {
+    "@grammyjs/storage-free": "^2.4.2",
+    "@solana/actions": "^1.1.2",
+    "@solana/spl-token": "^0.4.8",
+    "@solana/web3.js": "^1.95.0",
+    "grammy": "^1.27.0",
+    "hono": "^4.4.12"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240529.0",
+    "wrangler": "^3.57.2"
+  }
+}
