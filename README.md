@@ -1,6 +1,6 @@
 # Solana Action Endpoint Creator Bot (Work in Progress)
 
-This project implements a Telegram bot that allows users to easily create Solana Action endpoints for various programs (starting with USDC Transfer).
+This project implements a Telegram bot that allows users to easily create Solana Action endpoints for various programs (starting with USDC Transfer, later will add more program options).
 These endpoints can be easily used to create Blinks on https://dial.to. The bot utilizes Cloudflare Workers for serverless execution and Cloudflare KV for storing app specifications.
 
 ## Overview
@@ -12,7 +12,7 @@ The Solana Action Endpoint Creator Bot enables users to:
 
 ## Preview (Still in Progress)
 
-1. Go to 
+https://t.me/solana_action_bot (Work In Progress)
 
 ## Quick Start
 
