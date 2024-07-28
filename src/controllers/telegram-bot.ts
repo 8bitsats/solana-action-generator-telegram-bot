@@ -7,22 +7,25 @@ const { freeStorage } = require("@grammyjs/storage-free");
 interface SessionData {
   creatingApp: boolean;
   appData: Partial<USDCTransferActionSpec>;
+  awaitingIcon: boolean;
 }
 
 type MyContext = Context & SessionFlavor<SessionData> & {
   env: {
     SOLANA_ACTION_APPS: KVNamespace;
     BASE_URL: string;
+    PUBLIC_R2_URL: string;
+    ICON_BUCKET: R2Bucket;
   };
 };
 
 const DEFAULT_ICON_URL = "https://pub-5e7a518e1ac64fa28ad8bd8a857d269a.r2.dev/USDC%20TRANSFER.png";
 
-export async function createBot(token: string, env: { SOLANA_ACTION_APPS: KVNamespace, BASE_URL: string }) {
+export async function createBot(token: string, env: { SOLANA_ACTION_APPS: KVNamespace, BASE_URL: string, PUBLIC_R2_URL: string, ICON_BUCKET: R2Bucket }) {
   const bot = new Bot<MyContext>(token);
 
   bot.use(session({
-    initial: (): SessionData => ({ creatingApp: false, appData: {} }),
+    initial: (): SessionData => ({ creatingApp: false, appData: {}, awaitingIcon: false }),
     storage: freeStorage(token)
   }));
 
@@ -30,7 +33,7 @@ export async function createBot(token: string, env: { SOLANA_ACTION_APPS: KVName
     ctx.env = env;
     return next();
   });
-  const mainMenu = "Choose an action:\n/list - List all created apps\n/create - Create a new USDC Transfer App\n/delete - Delete an app";
+  const mainMenu = "Choose an action:\n/create - Create a new USDC Transfer App\n";
 
   async function sendMainMenu(ctx: MyContext) {
     console.log("Sending main menu...", mainMenu);
@@ -44,10 +47,10 @@ export async function createBot(token: string, env: { SOLANA_ACTION_APPS: KVName
 
   bot.command("start", sendMainMenu);
 
-  bot.command("list", async (ctx) => {
-    // Implement listing of apps
-    await ctx.reply("Listing apps... (to be implemented)");
-  });
+  // bot.command("list", async (ctx) => {
+  //   // Implement listing of apps
+  //   await ctx.reply("Listing apps... (to be implemented)");
+  // });
 
   bot.command("create", async (ctx) => {
     ctx.session.creatingApp = true;
@@ -55,10 +58,10 @@ export async function createBot(token: string, env: { SOLANA_ACTION_APPS: KVName
     await ctx.reply("Let's create a new USDC Transfer App. First, what's the title?\n\nYou can use /cancel at any time to abort the process.");
   });
 
-  bot.command("delete", async (ctx) => {
-    // Implement app deletion
-    await ctx.reply("Deleting an app... (to be implemented)");
-  });
+  // bot.command("delete", async (ctx) => {
+  //   // Implement app deletion
+  //   await ctx.reply("Deleting an app... (to be implemented)");
+  // });
 
   bot.command("cancel", async (ctx) => {
     if (ctx.session.creatingApp) {
@@ -77,8 +80,16 @@ export async function createBot(token: string, env: { SOLANA_ACTION_APPS: KVName
       if (!ctx.session.appData.title) {
         console.log("Setting title");
         ctx.session.appData.title = ctx.message.text;
-        ctx.session.appData.icon = DEFAULT_ICON_URL;
-        await ctx.reply("Great! I've set a default icon for your app. What's the description?\n\nUse /cancel to abort if needed.");
+        ctx.session.awaitingIcon = true;
+        await ctx.reply("Great! Now, please upload an icon image for your app. If you don't want to upload an image, just type 'skip' to use the default icon.\n\nUse /cancel to abort if needed.");
+      } else if (ctx.session.awaitingIcon) {
+        if (ctx.message.text.toLowerCase() === 'skip') {
+          ctx.session.appData.icon = DEFAULT_ICON_URL;
+          ctx.session.awaitingIcon = false;
+          await ctx.reply("Using default icon. What's the description?\n\nUse /cancel to abort if needed.");
+        } else {
+          await ctx.reply("Please upload an image or type 'skip' to use the default icon.\n\nUse /cancel to abort if needed.");
+        }
       } else if (!ctx.session.appData.description) {
         console.log("Setting description");
         ctx.session.appData.description = ctx.message.text;
@@ -95,7 +106,7 @@ export async function createBot(token: string, env: { SOLANA_ACTION_APPS: KVName
         try {
           console.log("Creating app with data:", ctx.session.appData);
           // Construct the endpoint URLs
-          const baseUrl = env.BASE_URL;
+          // const baseUrl = env.BASE_URL;
           const result = await createUSDCTransferActionApp(
             { SOLANA_ACTION_APPS: ctx.env.SOLANA_ACTION_APPS, BASE_URL: ctx.env.BASE_URL },
             ctx.session.appData as USDCTransferActionSpec
@@ -134,10 +145,36 @@ export async function createBot(token: string, env: { SOLANA_ACTION_APPS: KVName
     }
   });
 
+  bot.on("message:photo", async (ctx) => {
+    if (ctx.session.creatingApp && ctx.session.awaitingIcon) {
+      const fileId = ctx.message.photo[ctx.message.photo.length - 1].file_id;
+      const file = await ctx.api.getFile(fileId);
+      const fileUrl = `https://api.telegram.org/file/bot${token}/${file.file_path}`;
+
+      try {
+        const response = await fetch(fileUrl);
+        const arrayBuffer = await response.arrayBuffer();
+        const fileName = `icon_${Date.now()}.jpg`;
+        await ctx.env.ICON_BUCKET.put(fileName, arrayBuffer);
+        
+        const iconUrl = `${ctx.env.PUBLIC_R2_URL}/${fileName}`;
+        ctx.session.appData.icon = iconUrl;
+        ctx.session.awaitingIcon = false;
+
+        await ctx.reply("Icon uploaded successfully. What's the description?\n\nUse /cancel to abort if needed.");
+      } catch (error) {
+        console.error("Error uploading icon:", error);
+        await ctx.reply("There was an error uploading your icon. Please try again or type 'skip' to use the default icon.\n\nUse /cancel to abort if needed.");
+      }
+    } else if (!ctx.session.creatingApp) {
+      await sendMainMenu(ctx);
+    }
+  });
+
   return bot;
 }
 
-export async function handleWebhook(request: Request, env: { BOT_TOKEN: string, SOLANA_ACTION_APPS: KVNamespace, TELEGRAM_SECRET_TOKEN: string, BASE_URL: string }) {
+export async function handleWebhook(request: Request, env: { BOT_TOKEN: string, SOLANA_ACTION_APPS: KVNamespace, TELEGRAM_SECRET_TOKEN: string, BASE_URL: string, PUBLIC_R2_URL: string, ICON_BUCKET: R2Bucket }) {
 
     const secretToken = request.headers.get("X-Telegram-Bot-Api-Secret-Token");
     if (secretToken !== env.TELEGRAM_SECRET_TOKEN) {
@@ -147,7 +184,7 @@ export async function handleWebhook(request: Request, env: { BOT_TOKEN: string, 
 
     console.log("success")
 
-    const bot = await createBot(env.BOT_TOKEN, { SOLANA_ACTION_APPS: env.SOLANA_ACTION_APPS, BASE_URL: env.BASE_URL });
+    const bot = await createBot(env.BOT_TOKEN, { SOLANA_ACTION_APPS: env.SOLANA_ACTION_APPS, BASE_URL: env.BASE_URL, PUBLIC_R2_URL: env.PUBLIC_R2_URL, ICON_BUCKET: env.ICON_BUCKET });
 
     console.log("bot", bot)
     

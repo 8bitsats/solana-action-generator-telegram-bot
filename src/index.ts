@@ -8,6 +8,8 @@ type Bindings = {
   SOLANA_ACTION_APPS: KVNamespace;
   TELEGRAM_SECRET_TOKEN: string;
   BASE_URL: string;
+  PUBLIC_R2_URL: string;
+  ICON_BUCKET: R2Bucket;
 }
 
 const app = new Hono<{ Bindings: Bindings }>();

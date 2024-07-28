@@ -6,14 +6,15 @@ compatibility_flags = [ "nodejs_compat" ]
 BOT_TOKEN = 
 TELEGRAM_SECRET_TOKEN = 
 BASE_URL = 
+PUBLIC_R2_URL = 
 
 [[kv_namespaces]]
 binding = "SOLANA_ACTION_APPS"
 id = 
 
-# [[r2_buckets]]
-# binding = "MY_BUCKET"
-# bucket_name = "my-bucket"
+[[r2_buckets]]
+binding = "ICON_BUCKET"
+bucket_name = 
 
 # [[d1_databases]]
 # binding = "DB"
