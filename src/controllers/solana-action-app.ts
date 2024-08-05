@@ -100,6 +100,9 @@ export async function endpointPostUSDCTransfer(
   if (!spec) {
     return { error: 'App not found' };
   }
+
+  console.log("SPECC", spec)
+
   const fromPubkey = new PublicKey(body.account);
   const toPubkey = new PublicKey(spec.recipient);
   const amount = body.amount;
@@ -113,12 +116,16 @@ export async function endpointPostUSDCTransfer(
     connection
   });
 
+  console.log(`TRANSACTION`, transaction)
+
   const payload: ActionPostResponse = await createPostResponse({
     fields: {
       transaction,
       message: `Send ${amount} USDC to ${spec.recipient}`,
     },
   });
+
+  console.log(`PAYLOAD`, payload)
 
   return payload;
 }

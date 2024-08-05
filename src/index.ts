@@ -2,6 +2,9 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { handleWebhook } from './controllers/telegram-bot'
 import { createUSDCTransferActionApp, endpointGetUSDCTransfer, endpointPostUSDCTransfer, deleteUSDCTransferActionApp } from './controllers/solana-action-app'
+import { Buffer } from "node:buffer";
+
+globalThis.Buffer = Buffer;
 
 type Bindings = {
   BOT_TOKEN: string;
@@ -74,26 +77,39 @@ app.get('/endpoint/app/:id', async (c) => {
 app.post('/endpoint/app/:id/transfer-usdc', async (c) => {
   const id = c.req.param('id');
   console.log("POST REQUEST", id);
-  // Extract JSON body
-  const jsonBody = await c.req.json();
 
-  // Extract query string parameters
-  const queryStringParams = c.req.query();
+  let jsonBody, queryStringParams, spec;
 
-  // Combine them into a single object
-  const spec = {
-    ...jsonBody,
-    ...queryStringParams
-  };
+  try {
+      // Extract JSON body
+    jsonBody = await c.req.json();
+    console.log("JSON BODY", jsonBody);
+  
+    // Extract query string parameters
+    queryStringParams = c.req.query();
+  
+    console.log("QUERY STRING", queryStringParams);
 
-  console.log("SPEC", spec);
+      // Combine them into a single object
+    spec = {
+      ...jsonBody,
+      ...queryStringParams
+    };
+
+    console.log("SPEC", spec);
+  }
+  catch (error) {
+    console.error('Bad request:', error)
+    return c.json({ error: `Failed to execute USDC Transfer Action app, Bad Request: ${error.message}` }, 400)
+  }
+
 
   try {
     const result = await endpointPostUSDCTransfer(c.env, id, spec);
     return c.json(result);
   } catch (error) {
     console.error('Error executing USDC Transfer Action:', error)
-    return c.json({ error: 'Failed to execute USDC Transfer Action app' }, 500)
+    return c.json({ error: `Failed to execute USDC Transfer Action app. Message: ${error.message}` }, 500)
   }
 });
 

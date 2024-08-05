@@ -1,0 +1,12 @@
+diff --git a/node_modules/@solana/actions/src/createPostResponse.ts b/node_modules/@solana/actions/src/createPostResponse.ts
+index 9078ec4..90df576 100644
+--- a/node_modules/@solana/actions/src/createPostResponse.ts
++++ b/node_modules/@solana/actions/src/createPostResponse.ts
+@@ -6,6 +6,7 @@ import {
+   createActionIdentifierInstruction,
+   getActionIdentityFromEnv,
+ } from "./actionIdentity.js";
++import { Buffer } from 'node:buffer';
+ 
+ /**
+  * Thrown when the Action POST response cannot be created.
