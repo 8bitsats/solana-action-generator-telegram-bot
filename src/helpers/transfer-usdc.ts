@@ -15,14 +15,14 @@ import {
     fromPubkey: PublicKey;
     toPubkey: PublicKey;
     amount: number;
-    connection?: Connection;
+    connection: Connection;
   }
   
   export async function createUSDCTransferTransaction({
     fromPubkey,
     toPubkey,
     amount,
-    connection = new Connection(clusterApiUrl("mainnet-beta")),
+    connection,
   }: TransferUSDCParams): Promise<Transaction> {
     try {
       const fromTokenAccount = getAssociatedTokenAddressSync(USDC_MINT, fromPubkey);

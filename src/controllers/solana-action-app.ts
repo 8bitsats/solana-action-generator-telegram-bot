@@ -91,6 +91,7 @@ export async function endpointGetUSDCTransfer(
 export async function endpointPostUSDCTransfer(
   env: {
     SOLANA_ACTION_APPS: KVNamespace;
+    HELIUS_RPC_URL: string;
   },
   id: string,
   body: { account: string; amount?: number }
@@ -107,7 +108,7 @@ export async function endpointPostUSDCTransfer(
   const toPubkey = new PublicKey(spec.recipient);
   const amount = body.amount;
 
-  const connection = new Connection(clusterApiUrl("mainnet-beta"));
+  const connection = new Connection(env.HELIUS_RPC_URL);
 
   const transaction = await createUSDCTransferTransaction({
     fromPubkey,

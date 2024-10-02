@@ -13,6 +13,7 @@ type Bindings = {
   BASE_URL: string;
   PUBLIC_R2_URL: string;
   ICON_BUCKET: R2Bucket;
+  HELIUS_RPC_URL: string;
 }
 
 const app = new Hono<{ Bindings: Bindings }>();
